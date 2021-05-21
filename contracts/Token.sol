@@ -9,6 +9,7 @@ contract Token {
         address from;
         address to;
         uint256 amount;
+        uint256 dateTs;
     }
     
     struct Account {
@@ -26,7 +27,7 @@ contract Token {
     
     //https://medium.com/bandprotocol/solidity-102-3-maintaining-sorted-list-1edd0a228d83
     mapping(address => address) private _nextAccount;
-    uint256 accountsCount;
+    uint256 public accountsCount;
     address constant GUARD = address(1);
 
     
@@ -93,39 +94,33 @@ contract Token {
     
     function logTransaction(address from, address to, uint256 amount) private returns (bool success) {
         
-        TransactionLog memory transaction = TransactionLog(from, to, amount); 
+        TransactionLog memory transaction = TransactionLog(from, to, amount, block.timestamp); 
         transactionLogs.push(transaction);
         
         return true;
     }
     
-    function getLatestTransactions() public view returns (TransactionLog[] memory history) {
-        TransactionLog[] memory transacitonHistory = new TransactionLog[](20);
+    function getTransactionLog(uint n) public view returns (address from, address to, uint256 amount, uint ts) {
+        uint i = n % 19;
+        uint index = i >= transactionLogs.length ? transactionLogs.length - 1 : i;
         
-        uint start = transactionLogs.length < 20 ? 0 : transactionLogs.length - 20;
-        uint max = transactionLogs.length < 20 ? transactionLogs.length : 20;
-        
-        for(uint i = 0; i < max; i++) {
-            transacitonHistory[i] =  transactionLogs[start + i];
-        }
-        
-        return transacitonHistory;
+        TransactionLog memory transaction = transactionLogs[index];
+        return (transaction.from, transaction.to, transaction.amount, transaction.dateTs);
+    } 
+    
+    function getTopNAccount(uint256 n) public view returns(address account, uint256 balance, uint256 indexx) {
+        uint256 index = n >= accountsCount ? transactionLogs.length - 1 : n;
+        return getTopAccounts(index);
     }
     
-    function getTopTenAccounts() public view returns(Account[] memory) {
-        uint256 count = accountsCount >= 10 ? 10 : accountsCount;
-        return getTopAccounts(count);
-    }
-    
-    function getTopAccounts(uint256 n) private view returns(Account[] memory) {
+    function getTopAccounts(uint256 n) private view returns(address account, uint256 balance, uint256 index) {
         require(n <= accountsCount);
-        Account[] memory accountsList = new Account[](n);
         address curr = _nextAccount[GUARD];
-        for(uint256 i = 0; i < n; i++) {
-            accountsList[i] = Account(curr, balanceOf[curr]);
+        uint256 i = 0;
+        for(i = 0; i < n; i++) {
             curr = _nextAccount[curr];
         }
-        return accountsList;
+        return (curr, balanceOf[curr], i);
     }
     
     function _verifyIndex(address prevAcc, uint256 newValue, address nextAcc) internal view returns(bool) {
