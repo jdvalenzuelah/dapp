@@ -15,7 +15,7 @@ function check_web3j() {
 
 function prepare() {
     BUILD_DEST_PATH="$SOURCE_PATH/build"
-    GENERATED_DEST_PATH="$SOURCE_PATH/backend/src/main/java"
+    GENERATED_DEST_PATH="$SOURCE_PATH/app/src/main/java"
     GENERATED_CLASS="com.rombit.solidity"
     echo GENERATED_CLASS: ${GENERATED_CLASS}
     echo BUILD_DEST_PATH: ${BUILD_DEST_PATH}
