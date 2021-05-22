@@ -1,33 +1,11 @@
-package com.github.token
+package com.rombit.token
 
-import com.github.api.TokenApi
 import com.rombit.solidity.Token
-import org.http4k.core.*
-import org.http4k.lens.Header
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
-import org.web3j.protocol.http.HttpService
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.gas.StaticGasProvider
 import java.math.BigInteger
-import java.time.Instant
-import java.time.ZonedDateTime
-
-data class Account(
-    val address: String,
-    val amount: BigInteger,
-)
-
-data class TransactionLog(
-    val from: String,
-    val to: String,
-    val amount: BigInteger,
-    val dateEpoch: Long,
-) {
-    val date by lazy {
-        Instant.ofEpochSecond(dateEpoch)
-    }
-}
 
 class TokenRepo(
     private val web3j: Web3j,
@@ -70,8 +48,6 @@ class TokenRepo(
 
         return logs.distinct()
     }
-
-
 
 }
 
