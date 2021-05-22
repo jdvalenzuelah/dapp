@@ -58,7 +58,7 @@ class RombitTokenApp : CliktCommand() {
     }
 
     private fun app() {
-        val pk = prompt("Please enter private key to use for initial connection:", hideInput = true)
+        val pk = prompt("Please enter private key to use for initial connection", hideInput = true)
 
         if(pk.isNullOrEmpty())
             exitProcess(-1)
