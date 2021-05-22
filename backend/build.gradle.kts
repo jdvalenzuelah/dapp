@@ -19,7 +19,7 @@ group = "com.rombit"
 version = "1.0.0"
 
 application {
-    mainClassName = "com.rombit.api.server.MainKt"
+    mainClassName = "com.rombit.MainKt"
 }
 
 dependencies {
