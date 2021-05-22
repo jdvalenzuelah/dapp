@@ -35,9 +35,9 @@ dependencies {
     implementation("org.http4k:http4k-server-apache4:4.8.0.0")
     implementation("org.http4k:http4k-format-jackson:4.8.0.0")
 
-    /*implementation("org.tinylog:tinylog-api-kotlin:$tinyLogVersion")
+    implementation("org.tinylog:tinylog-api-kotlin:$tinyLogVersion")
     implementation("org.tinylog:tinylog-impl:$tinyLogVersion")
-    implementation("org.tinylog:slf4j-tinylog:$tinyLogVersion")*/
+    implementation("org.tinylog:slf4j-tinylog:$tinyLogVersion")
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))

@@ -6,24 +6,31 @@ import kweb.*
 
 
 fun  ElementCreator<*>.transactionList(transactions: Collection<TransactionLog>) {
-    table(fomantic.ui.celled.table).new {
-        thead().new {
-            tr().new {
-                th().text("From Address")
-                th().text("To Address")
-                th().text("Amount Transferred")
-                th().text("Date")
-            }
-        }
-        tbody().new {
-            transactions.forEach { transaction ->
+
+    if(transactions.isNotEmpty()) {
+        table(fomantic.ui.celled.table).new {
+            thead().new {
                 tr().new {
-                    td(mapOf("data-label" to "from")).text(transaction.from)
-                    td(mapOf("data-label" to "to")).text(transaction.to)
-                    td(mapOf("data-label" to "amount")).text(transaction.amount.toString())
-                    td(mapOf("data-label" to "date")).text(transaction.date.toString())
+                    th().text("Details")
+                }
+            }
+            tbody().new {
+                transactions.forEach { transaction ->
+                    tr().new {
+                        td(mapOf("data-label" to "from")).new {
+                            div {
+                                p().text("From: ${transaction.from}")
+                                p().text("To: ${transaction.to}")
+                                p().text("Amount: ${transaction.amount}")
+                                p().text("Date: ${transaction.date.toString()}")
+                            }
+                        }
+                    }
                 }
             }
         }
+    } else {
+        p().text("No history yet. Make a transaction to see it reflected here!")
     }
+
 }
