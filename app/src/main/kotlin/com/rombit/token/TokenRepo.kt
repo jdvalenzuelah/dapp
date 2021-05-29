@@ -4,15 +4,20 @@ import com.rombit.solidity.Token
 import org.tinylog.kotlin.Logger
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
+import org.web3j.protocol.core.DefaultBlockParameterName
+import org.web3j.protocol.core.methods.request.EthFilter
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.gas.StaticGasProvider
 import java.math.BigInteger
+import java.time.Instant
 
 class TokenRepo(
     private val web3j: Web3j,
     private val contractAddress: String,
     private val gasProvider: StaticGasProvider,
 ) {
+
+    private val ethFilter = EthFilter(DefaultBlockParameterName.EARLIEST, DefaultBlockParameterName.LATEST, contractAddress)
 
     private fun <T> tryOrEmptyCollection(block: () -> Collection<T>): Collection<T> {
         return try {
@@ -59,6 +64,13 @@ class TokenRepo(
                 logs.add(TransactionLog(log.component1(), log.component2(), log.component3(), log.component4().toLong()))
             }
             logs.distinct()
+        }
+    }
+
+    fun onTransfer(credentials: Credentials, predicate: (transaction: TransactionLog) -> Unit) {
+        val token = getTokenImpl(credentials)
+        token.transferEventFlowable(ethFilter).subscribe {
+            predicate(TransactionLog(it._from, it._to, it._value, Instant.now().epochSecond))
         }
     }
 

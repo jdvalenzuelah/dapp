@@ -14,10 +14,10 @@ import kotlinx.serialization.builtins.serializer
 import kweb.plugins.jqueryCore.executeOnSelf
 import kweb.shoebox.Shoebox
 import kweb.shoebox.stores.DirectoryStore
+import kweb.state.KVal
 import kweb.state.KVar
 import kweb.state.render
 import java.math.BigInteger
-import java.nio.file.FileStore
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -27,8 +27,6 @@ class TokenApp(
     private val debug: Boolean = false,
     private val tokenRepo: TokenRepo,
 ) {
-
-
 
     private val keys by lazy {
         val dir = Paths.get("data")
@@ -117,6 +115,12 @@ class TokenApp(
         require(pk.isNotEmpty())
         val privateKey = pk.privateKeyToCredentials()
 
+        val latestNotification = KVar<TransactionLog?>(null)
+
+        tokenRepo.onTransfer(privateKey) {
+            latestNotification.value = it
+        }
+
         mainView("Rombit Transfer Portal") {
 
             topAccounts.value = tokenRepo.getTopTenAccounts(privateKey)
@@ -141,7 +145,7 @@ class TokenApp(
             div(fomantic.ui.two.column.grid) {
                 div(fomantic.column) {
                     div(fomantic.top.attached.ui.segment) {
-                        val balance = KVar(Pair("", BigInteger.ZERO))
+                        val balance = KVar("" to BigInteger.ZERO)
 
                         checkBalanceForm {
                             GlobalScope.launch {
@@ -174,6 +178,21 @@ class TokenApp(
                 }
             }
 
+            render(latestNotification) { transaction ->
+                if(transaction != null) {
+                    div(fomantic.ui.teal.message) {
+                        i(fomantic.close.icon).on.click { latestNotification.value = null }
+                        div(fomantic.header) { text("New transfer!") }
+                        p().text("New transfer from ${transaction.from} to ${transaction.to} for ${transaction.amount}")
+                    }.executeOnSelf("""
+                    .on('click', function() {
+                        $(this)
+                          .closest('.message')
+                          .transition('fade');
+                      });
+                """.trimIndent())
+                }
+            }
         }
     }
 
