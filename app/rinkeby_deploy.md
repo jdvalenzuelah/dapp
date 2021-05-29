@@ -9,6 +9,7 @@
 ![dashboard](.images/infura-dashboard.png)
 
 3. Create a new project:
+
 ![dashboard](.images/project.png)
 
 4. Once the project is created, go to settings then to keys section. A new htp url will be created with the project id like: `https://mainnet.infura.io/v3/<TOKEN>` for test net we will be replacing `mainnet` with `rinkeby` from now on.
