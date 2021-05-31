@@ -22,6 +22,8 @@ contract Token {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+
+    address contractOwner;
     
     TransactionLog[] private transactionLogs;
     
@@ -39,6 +41,22 @@ contract Token {
         _nextAccount[GUARD] = GUARD;
         addAccount(msg.sender, _initSupply);
         totalSupply = _initSupply;
+        contractOwner = msg.sender;
+    }
+
+    modifier onlyIfOwner() {
+        require(msg.sender == contractOwner);
+        _;
+    }
+    
+    function addSupply(uint256 number) public onlyIfOwner {
+        uint256 newValue = balanceOf[contractOwner] + number;
+        balanceOf[contractOwner] = newValue;
+         if(_nextAccount[contractOwner] == address(0)) {
+            addAccount(contractOwner, newValue);
+        } else {
+            updateAccount(contractOwner, newValue);
+        }
     }
     
     function transfer(address _to, uint256 _value) public returns (bool success) {

@@ -122,77 +122,110 @@ class TokenApp(
         }
 
         mainView("Rombit Transfer Portal") {
+            val executingAction = KVar(false)
+            render(executingAction) { executing ->
+                if(executing) {
+                    div(fomantic.ui.loader).apply { addClasses("active") }
+                } else {
+                    topAccounts.value = tokenRepo.getTopTenAccounts(privateKey)
+                    transactionLog.value = tokenRepo.getLastTwentyTransactions(privateKey)
 
-            topAccounts.value = tokenRepo.getTopTenAccounts(privateKey)
-            transactionLog.value = tokenRepo.getLastTwentyTransactions(privateKey)
-
-            div(fomantic.ui.segment) {
-                val transferForm = transferForm { to, amount ->
-                    GlobalScope.launch {
-                        val toAddr = to.getValue().await()
-                        val amountBI = amount.getValue().await().toBigInteger()
-                        tokenRepo.transferFunds(privateKey, toAddr, amountBI)
-                        topAccounts.value = tokenRepo.getTopTenAccounts(privateKey)
-                        transactionLog.value = tokenRepo.getLastTwentyTransactions(privateKey)
-                    }
-                }
-                val btn = button(fomantic.ui.button).text("Transfer funds!")
-                btn.onImmediate.click {
-                    transferForm.executeOnSelf(".modal('show')")
-                }
-            }
-
-            div(fomantic.ui.two.column.grid) {
-                div(fomantic.column) {
-                    div(fomantic.top.attached.ui.segment) {
-                        val balance = KVar("" to BigInteger.ZERO)
-
-                        checkBalanceForm {
+                    div(fomantic.ui.segment) {
+                        val transferForm = transferForm { to, amount ->
                             GlobalScope.launch {
-                                val addr = it.getValue().await()
-                                balance.value = addr to tokenRepo.balanceOf(addr, privateKey)
+                                executingAction.value = true
+                                val toAddr = to.getValue().await()
+                                val amountBI = amount.getValue().await().toBigInteger()
+
+                                tryOrDisplayError {
+                                    tokenRepo.transferFunds(privateKey, toAddr, amountBI)
+                                }
+
+                                executingAction.value = false
+                                topAccounts.value = tokenRepo.getTopTenAccounts(privateKey)
+                                transactionLog.value = tokenRepo.getLastTwentyTransactions(privateKey)
                             }
                         }
-
-                        render(balance) {
-                            val (addr, balance) = it
-                            if(addr.isNotEmpty()) {
-                                div(fomantic.ui.basic.segment) {
-                                    div(fomantic.ui.message.success) {
-                                        p().text("Balance $addr: $balance")
-                                    }
-                                }
-                            } else { div() }
+                        val btn = button(fomantic.ui.button).text("Transfer funds!")
+                        btn.onImmediate.click {
+                            transferForm.executeOnSelf(".modal('show')")
                         }
                     }
-                    div(fomantic.ui.segment) {
-                        h4().text("Accounts with most balance:")
-                        render(topAccounts) { accountList(it) }
-                    }
-                }
-                div(fomantic.ui.column) {
-                    div(fomantic.top.attached.ui.segment) {
-                        h4().text("Latest transactions:")
-                        render(transactionLog) { transactionList(it) }
-                    }
-                }
-            }
 
-            render(latestNotification) { transaction ->
-                if(transaction != null) {
-                    div(fomantic.ui.teal.message) {
-                        i(fomantic.close.icon).on.click { latestNotification.value = null }
-                        div(fomantic.header) { text("New transfer!") }
-                        p().text("New transfer from ${transaction.from} to ${transaction.to} for ${transaction.amount}")
-                    }.executeOnSelf("""
+                    div(fomantic.ui.two.column.grid) {
+                        div(fomantic.column) {
+                            div(fomantic.top.attached.ui.segment) {
+                                val balance = KVar("" to BigInteger.ZERO)
+
+                                checkBalanceForm { loading, input ->
+                                    GlobalScope.launch {
+                                        loading.value = true
+                                        val addr = input.getValue().await()
+                                        tryOrDisplayError {
+                                            balance.value = addr to tokenRepo.balanceOf(addr, privateKey)
+                                        }
+                                        loading.value = false
+                                    }
+                                }
+
+                                render(balance) {
+                                    val (addr, balance) = it
+                                    if(addr.isNotEmpty()) {
+                                        div(fomantic.ui.basic.segment) {
+                                            div(fomantic.ui.message.success) {
+                                                p().text("Balance $addr: $balance")
+                                            }
+                                        }
+                                    } else { div() }
+                                }
+                            }
+                            div(fomantic.ui.segment) {
+                                h4().text("Accounts with most balance:")
+                                render(topAccounts) { accountList(it) }
+                            }
+                        }
+                        div(fomantic.ui.column) {
+                            div(fomantic.top.attached.ui.segment) {
+                                h4().text("Latest transactions:")
+                                render(transactionLog) { transactionList(it) }
+                            }
+                        }
+                    }
+
+                    render(latestNotification) { transaction ->
+                        if(transaction != null) {
+                            div(fomantic.ui.teal.message) {
+                                i(fomantic.close.icon).on.click { latestNotification.value = null }
+                                div(fomantic.header) { text("New transfer!") }
+                                p().text("New transfer from ${transaction.from} to ${transaction.to} for ${transaction.amount}")
+                            }.executeOnSelf("""
                     .on('click', function() {
                         $(this)
                           .closest('.message')
                           .transition('fade');
                       });
                 """.trimIndent())
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun ElementCreator<*>.tryOrDisplayError(block: () -> Unit) {
+        try {
+            block()
+        } catch (e: Exception) {
+            div(fomantic.ui.modal) {
+                div(fomantic.header) {
+                    p().text("Oops! we have encountered an error.")
+                }
+                div(fomantic.content) {
+                    div(fomantic.ui.error.message) {
+                        p().text("Error details: ${e.message}")
+                    }
+                }
+            }.executeOnSelf(".modal('show')")
         }
     }
 
